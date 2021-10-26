@@ -6,16 +6,13 @@ const session_squema = new Schema({
         type : Number,
         required : true
     },
-    nombre :{
+    name :{
         type : String,
-        require : true
+        require : false
     },
-    mensajes : {
+    messages : {
         type: Array,
         require : true
-    },
-    admin : {
-        type : String,
     },
     url : {
         type : String
@@ -23,5 +20,5 @@ const session_squema = new Schema({
 
 }, {timestamps : true});
 
-const session = mongoose.model('session', session_squema);
-module.exports = session;
+const Session = mongoose.model('Session', session_squema);
+module.exports = Session;

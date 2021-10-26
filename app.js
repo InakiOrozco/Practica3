@@ -1,103 +1,88 @@
 const express = require('express');
 const app = express();
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUI = require('swagger-ui-express');
 const path = require('path');
 const router = express.Router();
-const Database = require('./src/models/database');
 const apiRoutes = require('./src/routes');
-
-const Sala = require('./src/models/sessions');
-const User = require('./src/models/users');
-
-const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
-
+const Session = require('./src/models/session');
+const User = require('./src/models/user');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
+var contador = 1;
 
 if (process.env.NODE_ENV === 'dev') {
     require('dotenv').config();
-} 
+}
 
 //Puerto
 const port = process.env.PORT || 3000;
 
-var bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json())
-
+//Swagger
 const swaggerOptions = {
-    swaggerDefinition:{
+    swaggerDefinition: {
         swagger: "2.0",
         info: {
-            title:"Swagger Test API",
+            title: "Swagger Test API",
             description: "test api for swagger documentation",
             version: "1.0.0",
-            servers: ['http://localhost:'+port],
+            servers: ['http://localhost:' + port],
             contact: {
                 name: "ISOG",
-                email: "greenvana14@gmail.com"
+                correo: "greenvana14@gmail.com"
             }
         }
     },
     apis: ['app.js']
 }
 
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/swagger-ui', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json())
 app.use('/assets', express.static(path.join(__dirname, 'public')));
 
-MongoClient.connect(uri, {
-    useUnifiedTopology: true
-}, function (err, client) {
-    if (err) {
-        console.log('Failed to connect to MongoDB');
-    } else {
-        console.log('Se conecto a la base de datos');
-
-        database = client.db();
-
-        Database.setDatabase(database);
-
-        app.listen(port, () => {
-            console.log(`App is listening in port ${port}`);
-        });
-    }
-});
-
-/*
+//DB
 const { Db } = require('mongodb');
 const mongoose = require('mongoose');
 const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then((result) => console.log("connected to db..."))
-    .catch((err) => console.log(err));*/
+    .catch((err) => console.log(err));
+
+
+app.listen(port, () => {
+    console.log('App is listening in port: ' + port);
+});
+
 
 /** 
  * @swagger
  * /user/:email:
  *  get:
- *    description: return the user specified
+ *    description: User get by email
+ *    parameters:
+ *      - in: body
+ *        name: password
+ *        description: password of the user
+ *        type: string
  *    responses:
  *      200:
  *        description: success response
  *      400:
  *        description: bad data request
 */
+app.get('/user/:email', (req, res) => {
+    User.findOne({ "email": req.params.email })
+        .then((result) => {
+            if (result.password === req.body.password) {
+                res.send(result)
+            } else {
+                res.send("Error")
+            }
+        })
+        .catch((err) => console.log(err));
 
-app.get('/user/:email', (req,res) => {
-    User.findOne({"email" : req.params.email})
-    .then((result) => {
-        
-        if(result.password === req.body.password){
-            res.send("Loggin.....")
-            console.log(result.password)
-            console.log(req.body.password)
-        }else{
-            res.send("failed to login")
-            console.log(result.password)
-            console.log(req.body.password)
-        }
-    })
-    .catch((err) => console.log(err));
-    
 });
 
 
@@ -105,10 +90,10 @@ app.get('/user/:email', (req,res) => {
  * @swagger
  * /user:
  *  post:
- *    description: add an user
+ *    description: create user
  *    parameters:
  *      - in: body
- *        name: username
+ *        name: email
  *        description: email of the user
  *        type: string
  *      - in: body
@@ -121,7 +106,6 @@ app.get('/user/:email', (req,res) => {
  *      400:
  *        description: bad data request
 */
-
 app.post('/user', (req, res) => {
     console.log(req.body.email);
     console.log(req.body.password);
@@ -141,30 +125,9 @@ app.post('/user', (req, res) => {
 
 /** 
  * @swagger
- * /session/:id:
- *  get:
- *    description: return the user specified
- *    responses:
- *      200:
- *        description: success response
- *      400:
- *        description: bad data request
-*/
-
-app.get('/session/:id', (req,res) => {
-    Session.findOne({"id_session" : req.params.id})
-    .then((result) => {
-        res.send(result)
-    })
-    .catch((err) => console.log(err))
-});
-
-
-/** 
- * @swagger
  * /session:
  *  post:
- *    description: add a new session
+ *    description: create session
  *    parameters:
  *      - in: body
  *        name: name
@@ -176,13 +139,65 @@ app.get('/session/:id', (req,res) => {
  *      400:
  *        description: bad data request
 */
+app.post('/session', (req, res) => {
+    Session.find()
+    const session = new Session({
+        id_session: contador,
+        name: req.body.name
+    });
+    contador++;
+    
+    session.save()
+        .then((result) => {
+            res.send(result);
+        })
+        .catch((err) => console.log(err))
+});
 
-app.get('/session', (req, res) => {
-    session.find()
-    .then((result) => {
-        res.send(result);
+/** 
+ * @swagger
+ * /session/:id/link:
+ *  get:
+ *    description: generate the link
+ *    responses:
+ *      200:
+ *        description: success response
+ *      400:
+ *        description: bad data request
+*/
+app.get('/session/:id/link', (req, res) => {
+    let link = "http://127.0.0.1:3000/session/" + req.params.id
+    Session.findByIdAndUpdate(req.header('id_session'), { url: link }, (err, result) => {
+        if (err) {
+            res.send(err);
+        } else {
+            res.send(link);
+        }
     })
-    .catch((err) => console.log(err))
+        .then((result) => {
+            return result;
+        })
+        .catch((err) => console.log(err))
+
+});
+
+/** 
+ * @swagger
+ * /session/:id:
+ *  get:
+ *    description: get the session link
+ *    responses:
+ *      200:
+ *        description: success response
+ *      400:
+ *        description: bad data request
+*/
+app.get('/session/:id', (req, res) => {
+    Session.findOne({ "id_session": req.params.id })
+        .then((result) => {
+            res.send(result)
+        })
+        .catch((err) => console.log(err))
 });
 
 
@@ -190,7 +205,7 @@ app.get('/session', (req, res) => {
  * @swagger
  * /session/:id:
  *  post:
- *    description: update a session
+ *    description: add the messages
  *    parameters:
  *      - in: body
  *        name: message
@@ -202,7 +217,7 @@ app.get('/session', (req, res) => {
  *        type: string
  *      - in: body
  *        name: email
- *        description: user email
+ *        description: email of the user
  *        type: string
  *    responses:
  *      200:
@@ -210,59 +225,19 @@ app.get('/session', (req, res) => {
  *      400:
  *        description: bad data request
 */
+app.put('/session/:id', (req, res) => {
+    Session.findOne({ "id_session": req.params.id })
+        .then((result) => {
+            const array = result.messages;
+            array.push(req.body)
+            result.messages = array;
+            result.url = "http://127.0.0.1:3000/session/" + req.params.id;
 
-app.put('/session/:id', (req,res) => {
-    session.findOne({"id_session" : req.params.id})
-    .then((result) => {
-        const array = result.mensajes;
-        array.push(req.body)
-        result.mensajes = array;
-        result.url = "http://127.0.0.1:3000/session/"+req.params.id;
-        
-        session.findOneAndUpdate({"id_session" : req.params.id}, result, {upsert: true}, function(err, doc) {
-            if (err) return res.send(500, {error: err});
-            return res.send('Succesfully saved.');
-        });
-    })
-});
-
-/** 
- * @swagger
- * /session/:id/link:
- *  get:
- *    description: get the link of a session
- *    responses:
- *      200:
- *        description: success response
- *      400:
- *        description: bad data request
-*/
-
-app.get('/session/:id/link', (req,res) => {
-    let link = "http://127.0.0.1:3000/session/" + req.params.id
-    session.findByIdAndUpdate(req.header('id_session'), {url : link}, (err, result) =>{
-        if(err){
-            res.send(err);
-        }else{
-            res.send(link);
-        }
-    })
-    .then((result) => {
-        return result;
-    })
-    .catch((err) => console.log(err))
-    
-});
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/swagger-ui', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
-
-let database;
-
-
-router.get('/', (req, res) => {
-    const url = path.join(__dirname, 'public', 'index.html');
-    res.sendFile(url);
+            Session.findOneAndUpdate({ "id_session": req.params.id }, result, { upsert: true }, function (err, doc) {
+                if (err) return res.send(500, { error: err });
+                return res.send('Succesfully saved.');
+            });
+        })
 });
 
 app.use(router);
