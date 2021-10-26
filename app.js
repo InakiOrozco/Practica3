@@ -7,13 +7,16 @@ const router = express.Router();
 const Database = require('./src/models/database');
 const apiRoutes = require('./src/routes');
 
-const { MongoClient } = require('mongodb');
-
-const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
-
 if (process.env.NODE_ENV === 'dev') {
     require('dotenv').config();
 } 
+
+const { Db } = require('mongodb');
+const mongoose = require('mongoose');
+const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then((result) => console.log("Conectado a Mongo"))
+    .catch((err) => console.log(err));
 
 //Puerto
 const port = process.env.PORT || 3000;
@@ -41,31 +44,8 @@ const swaggerOptions = {
 
 app.use('/assets', express.static(path.join(__dirname, 'public')));
 
-MongoClient.connect(uri, {
-    useUnifiedTopology: true
-}, function (err, client) {
-    if (err) {
-        console.log('Failed to connect to MongoDB');
-    } else {
-        console.log('Se conecto a la base de datos');
 
-        database = client.db();
 
-        Database.setDatabase(database);
-
-        app.listen(port, () => {
-            console.log(`App is listening in port ${port}`);
-        });
-    }
-});
-
-/*
-const { Db } = require('mongodb');
-const mongoose = require('mongoose');
-const uri = "mongodb+srv://Halv:vyHykVpyy08pkAO6@cluster0.kcql9.mongodb.net/Cluster0?retryWrites=true&w=majority";
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then((result) => console.log("connected to db..."))
-    .catch((err) => console.log(err));*/
 
 /** 
  * @swagger
