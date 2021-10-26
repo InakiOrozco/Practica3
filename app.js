@@ -7,6 +7,9 @@ const router = express.Router();
 const Database = require('./src/models/database');
 const apiRoutes = require('./src/routes');
 
+const Sala = require('./src/models/sessions');
+const User = require('./src/models/users');
+
 const { MongoClient } = require('mongodb');
 const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
 
