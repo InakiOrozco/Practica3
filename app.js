@@ -58,90 +58,13 @@ app.listen(port, () => {
 
 /** 
  * @swagger
- * /users:
+ * /user/:email:
  *  get:
- *    description: return all users
+ *    description: User get by email
  *    parameters:
- *      - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
- *      - in: Query
- *        Params: string
- *        description: query params
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      401:
- *        description: invalid token
-*/
-
-app.get('/users', (req, res) =>{
-    res.send('users endpoint!')
-});
-
-
-/** 
- * @swagger
- * /users/:id:
- *  get:
- *    description: return the user specified
- *    parameters:
- *      - in: Header
- *        Bearer: token
- *        description: token 
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      204:
- *        description: user doesn't exist in database
- *      401:
- *        description: invalid token or not recieved
-*/
-
-app.get('/users/:id', (req, res) =>{});
-
-/** 
- * @swagger
- * /users/:id/posts:
- *  get:
- *    description: return all the user posts
- *    parameters:
-*       - in: Header
- *        Bearer: token
- *        description: token 
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      204:
- *        description: user doesn't exist in database
- *      401:
- *        description: invalid token or not recieved
-*/
-
-app.get('/users/:id/posts', (req, res) =>{});
-
-
-/** 
- * @swagger
- * /users:
- *  post:
- *    description: add an user
- *    parameters:
-*       - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
- *      - in: body
- *        name: username
- *        description: email of the user
- *        type: string
  *      - in: body
  *        name: password
- *        description: users password
+ *        description: password of the user
  *        type: string
  *    responses:
  *      200:
@@ -149,29 +72,33 @@ app.get('/users/:id/posts', (req, res) =>{});
  *      400:
  *        description: bad data request
 */
+app.get('/user/:email', (req, res) => {
+    User.findOne({ "email": req.params.email })
+        .then((result) => {
+            if (result.password === req.body.password) {
+                res.send(result)
+            } else {
+                res.send("Error")
+            }
+        })
+        .catch((err) => console.log(err));
 
-app.post('/users', (req, res) =>{
-    res.send('create user endpoint');
 });
 
 
 /** 
  * @swagger
- * /users/:id:
+ * /user:
  *  post:
- *    description: update an existing user
+ *    description: create user
  *    parameters:
-*       - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
  *      - in: body
- *        name: username
+ *        name: email
  *        description: email of the user
  *        type: string
  *      - in: body
  *        name: password
- *        description: users password
+ *        description: user password
  *        type: string
  *    responses:
  *      200:
@@ -179,128 +106,139 @@ app.post('/users', (req, res) =>{
  *      400:
  *        description: bad data request
 */
+app.post('/user', (req, res) => {
+    console.log(req.body.email);
+    console.log(req.body.password);
+    const user = new User({
+        email: req.body.email,
+        password: req.body.password
+    });
 
-app.put('/users/:id', (req, res) =>{
-    res.send('update user endpoint!');
-});
+    user.save()
+        .then((result => {
+            res.send(result);
+        })
+        )
+        .catch((err) => console.log(err))
+})
+
 
 /** 
  * @swagger
- * /posts:
- *  get:
- *    description: return all the posts in the database
+ * /session:
+ *  post:
+ *    description: create session
  *    parameters:
-*       - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
-*       - in: Query
- *        QueryParams: string
- *        description: query params
- *        type: string
+ *      - in: body
+ *        name: name
+ *        description: session name
+ *        type: string  
  *    responses:
  *      200:
- *        description: success
- *      204:
  *        description: success response
- *      401:
+ *      400:
  *        description: bad data request
 */
+app.post('/session', (req, res) => {
+    Session.find()
+    const session = new Session({
+        id_session: contador,
+        name: req.body.name
+    });
+    contador++;
+    
+    session.save()
+        .then((result) => {
+            res.send(result);
+        })
+        .catch((err) => console.log(err))
+});
 
-app.get('/posts', (req, res) =>{
-    res.send('get sessions');
+/** 
+ * @swagger
+ * /session/:id/link:
+ *  get:
+ *    description: generate the link
+ *    responses:
+ *      200:
+ *        description: success response
+ *      400:
+ *        description: bad data request
+*/
+app.get('/session/:id/link', (req, res) => {
+    let link = "http://127.0.0.1:3000/session/" + req.params.id
+    Session.findByIdAndUpdate(req.header('id_session'), { url: link }, (err, result) => {
+        if (err) {
+            res.send(err);
+        } else {
+            res.send(link);
+        }
+    })
+        .then((result) => {
+            return result;
+        })
+        .catch((err) => console.log(err))
+
+});
+
+/** 
+ * @swagger
+ * /session/:id:
+ *  get:
+ *    description: get the session link
+ *    responses:
+ *      200:
+ *        description: success response
+ *      400:
+ *        description: bad data request
+*/
+app.get('/session/:id', (req, res) => {
+    Session.findOne({ "id_session": req.params.id })
+        .then((result) => {
+            res.send(result)
+        })
+        .catch((err) => console.log(err))
 });
 
 
 /** 
  * @swagger
- * /posts/:id:
- *  get:
- *    description: return the specified post
+ * /session/:id:
+ *  post:
+ *    description: add the messages
  *    parameters:
-*       - in: Query
- *        Bearer: token
- *        description: token 
+ *      - in: body
+ *        name: message
+ *        description: the content of the message
+ *        type: string
+ *      - in: body
+ *        name: date
+ *        description: message date
+ *        type: string
+ *      - in: body
+ *        name: email
+ *        description: email of the user
  *        type: string
  *    responses:
  *      200:
  *        description: success response
- *      204:
- *        description: post doesn't exist in database
- *      401:
- *        description: invalid token or not recieved
+ *      400:
+ *        description: bad data request
 */
+app.put('/session/:id', (req, res) => {
+    Session.findOne({ "id_session": req.params.id })
+        .then((result) => {
+            const array = result.messages;
+            array.push(req.body)
+            result.messages = array;
+            result.url = "http://127.0.0.1:3000/session/" + req.params.id;
 
-app.get('/posts/:id', (req, res) =>{});
-
-/** 
- * @swagger
- * /groups:
- *  get:
- *    description: return all groups
- *    parameters:
- *      - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
- *      - in: Query
- *        QueryParams: string
- *        description: query params
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      401:
- *        description: invalid token
-*/
-
-app.get('/groups', (req, res) =>{
-    res.send('users endpoint!')
+            Session.findOneAndUpdate({ "id_session": req.params.id }, result, { upsert: true }, function (err, doc) {
+                if (err) return res.send(500, { error: err });
+                return res.send('Succesfully saved.');
+            });
+        })
 });
-
-/** 
- * @swagger
- * /groups/:id:
- *  get:
- *    description: return the specific group
- *    parameters:
- *      - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      204:
- *        description: user doesn't exist in database
- *      401:
- *        description: invalid token or not recieved
-*/
-
-app.get('/groups/:id', (req, res) =>{});
-
-
-/** 
- * @swagger
- * /groups/:id/posts:
- *  get:
- *    description: return all the posts of a specific group
- *    parameters:
- *      - in: Query
- *        Bearer: token
- *        description: token 
- *        type: string
- *    responses:
- *      200:
- *        description: success response
- *      204:
- *        description: user doesn't exist in database
- *      401:
- *        description: invalid token or not recieved
-*/
-
-app.get('/groups/:id/posts', (req, res) =>{});
-
 
 app.use(router);
 app.use('/api', apiRoutes);
