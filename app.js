@@ -9,9 +9,9 @@ const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
 var contador = 1;
 
-if (process.env.NODE_ENV === 'dev') {
-    require('dotenv').config();
-}
+
+require('dotenv').config();
+
 
 //Puerto
 const port = process.env.PORT || 3000;
@@ -45,8 +45,7 @@ app.use('/assets', express.static(path.join(__dirname, 'public')));
 //DB
 const { Db } = require('mongodb');
 const mongoose = require('mongoose');
-//const uri = "mongodb+srv://"+process.env.DB+"/Cluster0?retryWrites=true&w=majority"
-const uri = "mongodb+srv://admin:admin@cluster0.cfrb0.mongodb.net/Cluster0?retryWrites=true&w=majority";
+const uri = "mongodb+srv://"+process.env.DB+"/Cluster0?retryWrites=true&w=majority"
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then((result) => console.log("connected to db..."))
     .catch((err) => console.log(err));
@@ -211,14 +210,6 @@ app.get('/session/:id', (req, res) => {
  *      - in: body
  *        name: message
  *        description: the content of the message
- *        type: string
- *      - in: body
- *        name: date
- *        description: message date
- *        type: string
- *      - in: body
- *        name: email
- *        description: email of the user
  *        type: string
  *    responses:
  *      200:
