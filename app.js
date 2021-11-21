@@ -82,7 +82,6 @@ app.get('/user/:email', (req, res) => {
             }
         })
         .catch((err) => console.log(err));
-
 });
 
 
